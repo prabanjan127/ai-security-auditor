@@ -4,20 +4,18 @@
 
 **Live Demo:** `https://ai-security-auditor-one.vercel.app` · **Video:** *(Unlisted YouTube link)* · **Blog:** *(Dev.to/Hashnode link)*
 
-![Dashboard](docs/screenshot-dashboard.png)
-![Threat Table](docs/screenshot-table.png)
-![Remediation Terminal](docs/screenshot-terminal.png)
+> **Screenshots:** Add `docs/screenshot-dashboard.png`, `docs/screenshot-table.png`, `docs/screenshot-terminal.png` after `ng serve` capture.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-  A[Raw Logs<br/>.log/.txt<br/>Syslog/Nginx/auth.log] --> B[Ingestion & Sanitization<br/>src/app/services/log-generator.service.ts:12<br/>Bearer/api_key/password → [REDACTED]<br/>regex: discard 90% 200s, cluster 401/403 & SSH invalid-user & SQLi]
-  B --> C[Structured Prompt<br/>anomaly batch → JSON schema<br/>threatLevel, attackVector, mitreId, confidence, remediationCommands]
-  C --> D[AI Inference<br/>Gemini 2.0 Flash / Ollama Llama 3.1 8B<br/>or local heuristic fallback<br/>src/app/services/ai-auditor.service.ts:1]
-  D --> E[Risk & Remediation Engine<br/>Health = 100 - (Critical×25 + Warning×10)<br/>iptables / fail2ban-client / ufw / nginx]
-  E --> F[Angular Signals<br/>src/app/components/dashboard/dashboard.component.ts:1<br/>metrics, threat table, inspector, terminal]
-  F --> G[Dark Cyber UI<br/>#0a0f1d / #1e293b / glowing badges]
+  A["Raw Logs<br/>Syslog / Nginx / auth.log"] --> B["Ingestion & Sanitization<br/>redact credentials<br/>cluster anomalies"]
+  B --> C["Structured Prompt<br/>threatLevel, attackVector, mitreId"]
+  C --> D["AI Inference<br/>Gemini Flash / Ollama"]
+  D --> E["Risk & Remediation<br/>Health = 100 - C*25 - W*10"]
+  E --> F["Angular Signals<br/>metrics / table / terminal"]
+  F --> G["Dark Cyber UI"]
 ```
 
 **Pipeline highlight file mapping:**
