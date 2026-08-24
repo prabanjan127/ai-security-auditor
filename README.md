@@ -4,7 +4,8 @@
 
 **Live Demo:** `https://ai-security-auditor-one.vercel.app` · **Video:** *(Unlisted YouTube link)* · **Blog:** *(Dev.to/Hashnode link)*
 
-> **Screenshots:** Add `docs/screenshot-dashboard.png`, `docs/screenshot-table.png`, `docs/screenshot-terminal.png` after `ng serve` capture.
+![Dashboard](docs/screenshot-dashboard.png)
+![Terminal](docs/screenshot-terminal.png)
 
 ## Architecture
 
