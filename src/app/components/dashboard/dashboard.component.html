@@ -1,0 +1,239 @@
+<div class="cyber-header">
+  <div class="header-left">
+    <div class="brand-mark">
+      <i class="fa fa-shield"></i>
+    </div>
+    <div>
+      <div class="brand-title">AI SECURITY AUDITOR</div>
+      <div class="brand-sub">Heuristic Preprocessing + Structured LLM Inference</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="engine-badge"><span class="dot"></span> Engine Active</span>
+    <span class="header-meta"><i class="fa fa-filter"></i> Sanitized {{ metrics.sanitizedTokensCount }} tokens</span>
+    <span class="health-pill" [style.borderColor]="healthColor()" [style.color]="healthColor()">Health {{ metrics.securityHealthScore }}%</span>
+    <a href="https://github.com" target="_blank" class="header-link" aria-label="GitHub"><i class="fa fa-github"></i></a>
+  </div>
+</div>
+
+<div class="dashboard-container">
+  <!-- Top Metric Bar: Total Logs Ingested, Critical Threats Detected, Active Warnings, Security Health Score -->
+  <div class="metric-bar">
+    <div class="metric-card">
+      <div class="metric-icon"><i class="fa fa-layer-group"></i></div>
+      <div>
+        <div class="metric-label">Total Logs Ingested</div>
+        <div class="metric-value">{{ metrics.totalLogsIngested }}</div>
+        <div class="metric-hint">+ sanitized {{ metrics.sanitizedTokensCount }} creds</div>
+      </div>
+    </div>
+    <div class="metric-card critical">
+      <div class="metric-icon critical"><i class="fa fa-fire"></i></div>
+      <div>
+        <div class="metric-label">Critical Threats Detected</div>
+        <div class="metric-value">{{ metrics.criticalThreats }}</div>
+        <div class="metric-hint">×25 health penalty</div>
+      </div>
+    </div>
+    <div class="metric-card warning">
+      <div class="metric-icon warning"><i class="fa fa-triangle-exclamation"></i></div>
+      <div>
+        <div class="metric-label">Active Warnings</div>
+        <div class="metric-value">{{ metrics.activeWarnings }}</div>
+        <div class="metric-hint">×10 health penalty</div>
+      </div>
+    </div>
+    <div class="metric-card health">
+      <div class="metric-ring" [style.background]="'conic-gradient(' + healthColor() + ' ' + metrics.securityHealthScore + '%, #1e293b 0)'">
+        <span>{{ metrics.securityHealthScore }}%</span>
+      </div>
+      <div>
+        <div class="metric-label">Security Health Score</div>
+        <div class="metric-value" [style.color]="healthColor()">{{ metrics.securityHealthScore }}%</div>
+        <div class="metric-hint">100 - (Critical×25 + Warning×10)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Bar: Drag-and-drop log upload zone, file input, and "Load Sample Attack Logs" -->
+  <div class="action-bar">
+    <div class="ingestion-grid">
+      <div class="upload-zone"
+           [class.drag-over]="dragOver"
+           (dragover)="onDragOver($event)"
+           (dragleave)="onDragLeave()"
+           (drop)="onDrop($event)">
+        <div class="upload-icon"><i class="fa fa-cloud-upload"></i></div>
+        <h3>Drag & Drop Log File</h3>
+        <p>Syslog · Nginx · auth.log · Suricata/Zeek · <code>.log</code> / <code>.txt</code> — credentials auto-redacted client-side</p>
+        <div class="upload-actions">
+          <label class="btn-browse">
+            <i class="fa fa-folder-open"></i> Browse Files
+            <input type="file" (change)="onFileSelected($event)" accept=".log,.txt,.json,.csv" hidden />
+          </label>
+          <button class="btn-load-samples" (click)="loadSampleLogs()">
+            <i class="fa fa-bolt"></i> Load Sample Attack Logs
+          </button>
+          <button class="btn-ghost" (click)="togglePaste()">
+            <i class="fa fa-paste"></i> {{ showPaste ? 'Hide' : 'Paste Raw Logs' }}
+          </button>
+        </div>
+        <div class="upload-hint" *ngIf="dragOver">Drop to ingest & sanitize…</div>
+      </div>
+
+      <div class="preset-panel">
+        <div class="preset-title"><i class="fa fa-flask"></i> Attack Presets — 1-click</div>
+        <div class="preset-grid">
+          @for (p of attackPresets; track p.id) {
+            <button class="preset-btn" [class.active]="activePresetId===p.id" (click)="loadPreset(p.id)">
+              <i class="fa {{p.icon}}"></i>
+              <span class="preset-name">{{ p.name }}</span>
+              <span class="preset-desc">{{ p.description }}</span>
+            </button>
+          }
+        </div>
+        <div class="paste-area" *ngIf="showPaste">
+          <textarea [(ngModel)]="pasteText" rows="6" placeholder="Paste raw log lines here — e.g. sshd Failed password, nginx 403, Nmap scan... (tokens will be redacted)"></textarea>
+          <div class="paste-actions">
+            <button class="btn-load-samples" (click)="onPasteAnalyze()"><i class="fa fa-magic"></i> Analyze Pasted Logs</button>
+            <span class="paste-count">{{ pasteText.split('\n').filter(l=>l.trim()).length }} lines</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <div class="filter-left">
+      <div class="search-box">
+        <i class="fa fa-search"></i>
+        <input [(ngModel)]="search" (ngModelChange)="applyFilters()" placeholder="Search IP, category, MITRE, vector..." />
+      </div>
+      <select class="filter-select" [(ngModel)]="severityFilter" (ngModelChange)="applyFilters()">
+        <option value="ALL">All Severities</option>
+        <option value="CRITICAL">CRITICAL</option>
+        <option value="WARNING">WARNING</option>
+        <option value="INFO">INFO</option>
+        <option value="CLEAN">CLEAN</option>
+      </select>
+      <select class="filter-select" [(ngModel)]="vectorFilter" (ngModelChange)="applyFilters()">
+        <option value="ALL">All Vectors</option>
+        @for (v of vectorOptions; track v) { <option [value]="v">{{ v }}</option> }
+      </select>
+      <button class="btn-ghost small" (click)="clearFilters()"><i class="fa fa-times"></i> Clear</button>
+    </div>
+    <div class="filter-right">
+      <span class="filter-count">{{ filtered.length }} / {{ threatReports.length }} threats</span>
+      <span class="filter-updated"><i class="fa fa-clock-o"></i> {{ metrics.lastUpdated | date:'mediumTime' }}</span>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <!-- Threat Intelligence Table -->
+    <div class="threat-table-section">
+      <div class="section-head">
+        <h3><i class="fa fa-bug"></i> Threat Intelligence Table</h3>
+        <span class="section-meta">{{ filtered.length }} anomalies · Structured JSON: threatLevel, attackVector, mitreTechniqueId, confidence, remediation</span>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Severity Badge</th>
+              <th>Source IP</th>
+              <th>Threat Category</th>
+              <th>Trigger Rule</th>
+              <th>MITRE</th>
+              <th>Conf.</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (report of filtered; track report.id) {
+              <tr (click)="selectReport(report)"
+                  [class.selected]="selected?.id===report.id"
+                  [class.critical]="report.entry.severity==='CRITICAL'"
+                  [class.warning]="report.entry.severity==='WARNING'"
+                  [class.clean]="report.entry.severity==='CLEAN'">
+                <td class="mono">{{ report.entry.timestamp | date:'HH:mm:ss' }}</td>
+                <td><span class="severity-badge {{ getSeverityClass(report.entry.severity) }}">{{ report.entry.severity }}</span></td>
+                <td class="mono"><i class="fa fa-laptop"></i> {{ report.entry.sourceIp }}</td>
+                <td><span class="cat-chip">{{ report.entry.threatCategory }}</span></td>
+                <td class="trigger">{{ report.attackVector }}</td>
+                <td><a class="mitre-link" [href]="report.mitreTechnique.url" target="_blank">{{ report.mitreTechnique.id }}</a></td>
+                <td class="mono">{{ report.confidenceScore | number:'1.2-2' }}</td>
+              </tr>
+            }
+            @if (filtered.length===0) {
+              <tr><td colspan="7" class="empty-row">No threats match filters — try clearing search.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Inspector + Terminal -->
+    <div class="inspector-col">
+      <div class="inspector-card" *ngIf="selected">
+        <div class="inspector-head">
+          <h4><i class="fa fa-crosshairs"></i> {{ selected.attackVector }} · {{ selected.entry.sourceIp }}</h4>
+          <span class="severity-badge {{ getSeverityClass(selected.entry.severity) }}">{{ selected.entry.severity }} · Risk {{ selected.riskScore }}/10</span>
+        </div>
+        <div class="inspector-meta">
+          <span><i class="fa fa-shield"></i> {{ selected.mitreTechnique.id }} · {{ selected.mitreTechnique.name }}</span>
+          <span class="tactic">{{ selected.mitreTechnique.tactic }}</span>
+          <span class="conf"><i class="fa fa-bullseye"></i> Confidence {{ selected.confidenceScore | percent:'1.0-0' }}</span>
+        </div>
+        <div class="ai-analysis">
+          <i class="fa fa-robot"></i> {{ selected.aiAnalysis }}
+        </div>
+        <div class="ioc-row">
+          @for (ioc of selected.indicatorsOfCompromise; track ioc) { <span class="ioc-chip">{{ ioc }}</span> }
+        </div>
+        <div class="raw-line">
+          <code>{{ selected.entry.rawLine }}</code>
+        </div>
+      </div>
+      <div class="inspector-card empty" *ngIf="!selected">
+        <i class="fa fa-hand-pointer-o"></i> Select a threat row to inspect AI forensics.
+      </div>
+
+      <!-- Remediation Terminal -->
+      <div class="remediation-terminal">
+        <div class="terminal-head">
+          <h3><i class="fa fa-terminal"></i> Remediation Terminal</h3>
+          <div class="terminal-actions">
+            <button class="btn-ghost small" (click)="copyAll()" [disabled]="!selected"><i class="fa fa-copy"></i> Copy All</button>
+            <button class="btn-ghost small" (click)="downloadScript()" [disabled]="!selected"><i class="fa fa-download"></i> Export .sh</button>
+            <button class="btn-load-samples small" (click)="executeAll()" [disabled]="!selected"><i class="fa fa-play"></i> Run All (Sim)</button>
+          </div>
+        </div>
+        <div class="terminal-output" #termOut>
+          @for (line of terminalOutput; track $index) {
+            <div class="term-line">{{ line }}</div>
+          }
+          <div class="term-divider" *ngIf="terminalOutput.length">— actionable mitigations for selected threat —</div>
+          @if (selected) {
+            @for (action of selected.recommendedActions; track action.id) {
+              <div class="terminal-command" [class.executed]="action.executed">
+                <div class="cmd-top">
+                  <span class="command-prompt">$</span>
+                  <span class="command-text">{{ action.command }}</span>
+                  <button class="copy-btn" (click)="copy(action.command, action.id)">
+                    <i class="fa" [class.fa-copy]="copiedId!==action.id" [class.fa-check]="copiedId===action.id"></i> {{ copiedId===action.id ? 'Copied' : 'Copy' }}
+                  </button>
+                  <button class="copy-btn run" (click)="execute(action.id)"><i class="fa fa-play"></i> Run</button>
+                </div>
+                <span class="command-desc"><span class="cat-badge {{action.category}}">{{ action.category }}</span> {{ action.description }} · priority {{ action.priority }}</span>
+              </div>
+            }
+          } @else {
+            <div class="terminal-command empty-state">Select a threat to generate copyable firewall / fail2ban / nginx mitigations.</div>
+          }
+        </div>
+        <div class="terminal-foot">Health = 100 − (Critical × 25 + Warning × 10) · Streaming structured JSON via Angular signals</div>
+      </div>
+    </div>
+  </div>
+</div>
