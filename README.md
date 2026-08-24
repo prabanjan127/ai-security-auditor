@@ -2,7 +2,7 @@
 
 > Manual log triage takes 15+ minutes and misses stealthy bursts. This dashboard ingests raw Syslog/Nginx/auth.log/Suricata logs, redacts credentials client-side, clusters anomalies with lightweight heuristics, and streams structured threat JSON (threatLevel, attackVector, mitreTechniqueId, confidence, remediation) into an interactive cyber-terminal for instant iptables/fail2ban/nginx mitigations.
 
-**Live Demo:** `https://your-vercel-url.vercel.app` · **Video:** *(Unlisted YouTube link)* · **Blog:** *(Dev.to/Hashnode link)*
+**Live Demo:** `https://ai-security-auditor-one.vercel.app` · **Video:** *(Unlisted YouTube link)* · **Blog:** *(Dev.to/Hashnode link)*
 
 ![Dashboard](docs/screenshot-dashboard.png)
 ![Threat Table](docs/screenshot-table.png)
@@ -50,7 +50,7 @@ Recommended models per spec: **Gemini 2.0 Flash** (1M context, sub-second) for h
 
 ```bash
 # prerequisites: Node 20+, npm 10+
-git clone <your-repo>.git
+git clone https://github.com/prabanjan127/ai-security-auditor.git
 cd ai-security-auditor
 npm install          # installs bootstrap@5.3.8 + font-awesome@4.7.0 per angular.json:33
 ng serve             # http://localhost:4200 — dashboard auto-loads Full Attack Suite
@@ -81,8 +81,8 @@ npm run build
 
 ## Project Links (replace before submit)
 
-* **GitHub:** `https://github.com/<you>/ai-security-auditor`
-* **Live Demo:** `https://<you>.vercel.app`
+* **GitHub:** `https://github.com/prabanjan127/ai-security-auditor`
+* **Live Demo:** `https://ai-security-auditor-one.vercel.app`
 * **Blog (Dev.to/Hashnode):** paste draft from prompt + screenshots above
 * **Video (Unlisted YouTube):** 0:00 problem / 0:30 upload demo / 1:30 architecture
 
